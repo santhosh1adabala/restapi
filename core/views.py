@@ -3,21 +3,39 @@ from rest_framework import viewsets
 from .models import Customer, Profession, DataSheet, Document
 from .serializers import CustomerSerializer, ProfessionSerializer, DataSheetSerializer, DocumentSerializer
 from rest_framework.response import Response
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
+
+
+
 
 # Create your views here.
 
 class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
+    filter_fields=('name',)
+    filter_backends = [DjangoFilterBackend,filters.SearchFilter]
 
     def get_queryset(self):
-        activecustomer = Customer.objects.filter(active=True)
-        return activecustomer
+        #import pdb;pdb.set_trace()
+        address=self.request.query_params.get('address',None)
+        status=False if self.request.query_params.get('active')=='False' else True
+        if address :
+
+            customer = Customer.objects.filter(address__icontains=address,active=status)
+            #import pdb;pdb.set_trace()
+
+        else:
+           # import pdb;pdb.set_trace()
+
+            customer = Customer.objects.filter(active=True)
+        return customer
 
 
-    def list(self, request, *args, **kwargs):
-        customers=Customer.objects.filter(id=3)
-        serializer=CustomerSerializer(customers,many=True)
-        return Response(serializer.data)
+ #   def list(self, request, *args, **kwargs):
+  #      customers=self.get_queryset()
+   #     serializer=CustomerSerializer(customers,many=True)
+    #    return Response(serializer.data)
     def create(self, request, *args, **kwargs):
         data = request.data
         customers=Customer.objects.create(name=data['name'],address=data["address"],data_sheet_id=data["data_sheet"])
