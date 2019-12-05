@@ -5,6 +5,7 @@ from .serializers import CustomerSerializer, ProfessionSerializer, DataSheetSeri
 from rest_framework.response import Response
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 
 
 
@@ -36,6 +37,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
   #      customers=self.get_queryset()
    #     serializer=CustomerSerializer(customers,many=True)
     #    return Response(serializer.data)
+    #POST modification
     def create(self, request, *args, **kwargs):
         data = request.data
         customers=Customer.objects.create(name=data['name'],address=data["address"],data_sheet_id=data["data_sheet"])
@@ -44,6 +46,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         customers.save()
         serializer=CustomerSerializer(customers)
         return Response(serializer.data)
+    #PUT modification
     def update(self, request, *args, **kwargs):
         customer=self.get_object()
         data=request.data
@@ -57,6 +60,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         customer.save()
         serializer=CustomerSerializer(customer)
         return Response(serializer.data)
+    #PATCH modification
     def partial_update(self, request, *args, **kwargs):
         customer=self.get_object()
         customer.name=request.data.get('name',customer.name)
@@ -65,7 +69,40 @@ class CustomerViewSet(viewsets.ModelViewSet):
         customer.save()
         serializer=CustomerSerializer(customer)
         return Response(serializer.data)
-
+    #Delete Modificaton
+    def destroy(self, request, *args, **kwargs):
+        d=self.get_object()
+        d.delete()
+        return
+    #custom actions
+    @action(detail=True)
+    def deactivate(self,request,**kwargs):
+        customer=self.get_object()
+        customer.active=False
+        customer.save()
+        serializer=CustomerSerializer(customer)
+        return Response(serializer.data)
+    @action(detail=False)
+    def deactivate_all(self,request,**kwargs):
+        #import pdb;pdb.set_trace()
+        customer=Customer.objects.all()
+        customer.update(active=False)
+        serializer=CustomerSerializer(customer,many=True)
+        return Response(serializer.data)
+    @action(detail=False)
+    def activate_all(self,request,**kwargs):
+        #import pdb;pdb.set_trace()
+        customer=Customer.objects.all()
+        customer.update(active=True)
+        serializer = CustomerSerializer(customer,many=True)
+        return Response(serializer.data)
+    @action(detail=False,methods=['POST'])
+    def change_status(self,request,**kwargs):
+        status=True if request.data['active'] =='True' else False
+        customer=Customer.objects.all()
+        customer.update(active=status)
+        serializer = CustomerSerializer(customer, many=True)
+        return Response(serializer.data)
 
 
 
